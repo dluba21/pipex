@@ -6,79 +6,13 @@ void	print_error(char *str)
 	exit (0);
 }
 
-void	filename_parser(int argc, char **argv, t_vars *vars)
-{
-	vars->infile = argv[1];
-	vars->outfile = argv[argc - 1];
-}
 
-int ft_strncmp_ppx(char *str_1, char *str_2, int n)
-{
-	int	i;
 
-	i = 0;
-	while (i < n)
-	{
-		if (str_1[i] != str_2[i])
-			return (-1);
-		i++;
-	}
-	return (1);
-}
 
-int find_path_var(char **env, t_vars *vars)
-{
-	int	i;
 
-	i = 0;
-	while (env[i])
-	{
-		if (ft_strncmp_ppx("PATH=", env[i], 5) == 1)
-		{
-			vars->path_var = ft_split(env[i] + 5, ':'); //rewrite split to NULL as parameter
-			if (!vars->path_var)
-				return (0);
-			return (1);
-		}
-		i++;
-	}
-	return (0);
-}
 
-void	env_parser(char **env, t_vars *vars)
-{
-	int	i;
 
-	i = 0;
-	if (!env)
-		print_error("env is null\n");
-	vars->env_ptr = env; //malloc nado?
-	if (!find_path_var(env, vars)) //here I initialized PATH variable
-		print_error("no var path in **env\n"); //and check on absence
-}
 
-void	cmd_parser(char *argv_str, t_vars *vars) //mb flag na commad 1 and cmd 2
-{
-	char	buf_str[10000]; //mb echo "100000000 symbols" so change way mb
-	int		i;
-
-	i = 0;
-	while (*argv_str != ' ' && *argv_str != '\t' && *argv_str)
-		buf_str[i++] = *argv_str++;
-	buf_str[i] = 0;
-	vars->cmd = ft_strdup(buf_str);
-	
-	while (*argv_str == ' ' || *argv_str == '\t')
-		argv_str++;
-	
-	i = 0;
-	while (*argv_str)
-		buf_str[i++] = *argv_str++; //can be spaces in path... "/ "
-	buf_str[i] = 0;
-	vars->flag_to_cmd = ft_strdup(buf_str);
-//	printf("cmd = %s\n", vars->cmd);
-//	printf("flag_to_cmd = %s\n", vars->flag_to_cmd);
-}
 
 void compose_path_and_find_cmd(t_vars *vars) //change to no matter what num of cmd
 {
@@ -106,7 +40,7 @@ void compose_path_and_find_cmd(t_vars *vars) //change to no matter what num of c
 		free(cmd_temp);
 		vars->path_var++;
 	}
-	print_error("command haven't found\n");
+	print_error("error: command hasn't been found\n");
 }
 
 void compose_argv_to_child(t_vars *vars)
@@ -137,53 +71,75 @@ void child_1_actions(t_vars *vars)
 	int	fd;
 	int	ret;
 
+	cmd_parser(vars->argv_ptr[2], vars);
 	fd = open(vars->infile, O_RDONLY);
-	
 	if (fd == -1)
 		print_error("open error: child_1\n"); //mb should exit and in the main process
-	printf("fd = %d\n", fd);
-//	 pochemu imenno takoy poryadok argumentov?
-	printf("fd_pipe_0 = %d\n", vars->pipe_fd[0]);
-	printf("fd_pipe_1 = %d\n", vars->pipe_fd[1]);
+
+
+	if (dup2(vars->pipe_fd[1], 1) < 0 || dup2(fd, 0) < 0)
+		print_error("dup2 error: child1\n");
 	close(vars->pipe_fd[0]);
-	
-	ret = dup2(1, vars->pipe_fd[1]);
-	printf("ret = %d\n", ret);
-//	if ( < 0)
-//		print_error("dup2 error: child\n");
-	
-	printf("before exec!\n");
-
-//	close(vars->pipe_fd[1]);
+	close(vars->pipe_fd[1]);
+	close(fd);
 
 
-//	compose_argv_to_child(vars); //make argv to cmd
-//	ret = execve("/bin/ls", vars->cmd_argv, vars->env_ptr);
+	compose_argv_to_child(vars); //make argv to cmd
 //	free_child();
-	exit (1);
-	if (ret == -1)
+	if (execve(vars->path_to_cmd, vars->cmd, vars->env_ptr) == -1)
+	{
 		print_error("execv error: child_1\n"); //and free child args
+	}
+}
+
+void child_2_actions(t_vars *vars)
+{
+	int	fd;
+	int	ret;
+
+	cmd_parser(vars->argv_ptr[4], vars);
+	fd = open(vars->outfile, O_WRONLY | O_CREAT, 0777);
+	if (fd == -1)
+		print_error("open error: child_2\n"); //mb should exit and in the main process
+	printf("fd = %d\n", fd);
+	
+	if (dup2(vars->pipe_fd[0], 0) < 0 || dup2(fd, 1) < 0)
+		print_error("dup2 error: child1\n");
+	
+	close(vars->pipe_fd[0]);
+	close(vars->pipe_fd[1]);
+	close(fd);
+	
+	compose_argv_to_child(vars);
+	if (execve(vars->path_to_cmd, vars->cmd, vars->env_ptr) == -1)
+	{
+		print_error("execv error: child_2\n"); //and free child args
+	}
+
+
 }
 
 void	process_part(t_vars *vars)
 {
 	if (pipe(vars->pipe_fd) == -1)
 		print_error("pipe error\n");
-	
-	vars->pid = fork();
-	if (vars->pid == -1)
+	vars->pid_1 = fork();
+	if (vars->pid_1 == -1)
 		print_error("fork error\n");
-	else if (vars->pid != 0)
-		wait(NULL);
 	else
 		child_1_actions(vars);
-//
-//	if (dup2(vars->pipe_fd[0], 0) == -1)
-//		print_error("dup2 error: parent\n");
-//
-//	close(vars->pipe_fd[0]);
-//	close(vars->pipe_fd[1]);
-	
+	vars->pid_2 = fork();
+	if (vars->pid_2 == -1)
+		print_error("fork error\n");
+	else
+		child_2_actions(vars);
+
+
+
+	close(vars->pipe_fd[0]);
+	close(vars->pipe_fd[1]);
+	waitpid(vars->pid_1, NULL, 0);
+	waitpid(vars->pid_2, NULL, 0);
 	
 }
 
@@ -194,13 +150,13 @@ int main(int argc, char **argv, char **env)
 
 //	if (argc != 5)
 //		print_error("problem with argc\n");
-	
+	vars.argv_ptr = argv;
 	env_parser(env, &vars);
 //	printf("PATH = %s\n", *vars.path_var);
-	cmd_parser(argv[2], &vars);
 	filename_parser(argc, argv, &vars);
 	compose_path_and_find_cmd(&vars); //mb first command should be passed
-	process_part(&vars);
+	printf("%s\n", vars.infile);
+//	process_part(&vars);
 //
 	
 }
