@@ -1,5 +1,51 @@
 #include "pipex.h"
 
+void	free_all(t_vars *vars)
+{
+//	if (vars->cmd)
+//		free(vars->cmd);
+//	if (vars->flag_to_cmd)
+//		free(vars->flag_to_cmd);
+//	if (vars->path_to_cmd)
+//		free(vars->path_to_cmd);
+////	if (vars->cmd_argv)
+////	{
+////		vars->counter = 0;
+////		while (vars->cmd_argv[vars->counter])
+////			free(vars->cmd_argv[vars->counter++]);
+////		free(vars->cmd_argv);
+////	}
+//	if (vars->path_var)
+//	{
+//		vars->counter = 0;
+//		while (vars->path_var[vars->counter])
+//			free(vars->path_var[vars->counter++]);
+//		free(vars->path_var);
+//	}
+	if (ft_strcmp_ppx(vars->infile, "here_doc") && vars->infile)
+		unlink("here_doc");
+//
+//	char	**cmd_argv;
+//
+//
+//
+//	char	**path_var;
+//
+//
+//
+//	char	*infile;
+//	char	*outfile;
+//	char	**env_ptr;
+
+}
+
+void	print_error_and_free(char *str, t_vars *vars)
+{
+	free_all(vars);
+	write(2, str, ft_strlen(str));
+	exit (0);
+}
+
 void	print_error(char *str)
 {
 	write(2, str, ft_strlen(str));
@@ -42,10 +88,10 @@ void	env_argc_parser(char **env, int argc, t_vars *vars) //good
 
 	i = 0;
 	if (!env)
-		print_error("env is null\n");
+		print_error_and_free("env is null\n", vars);
 	vars->env_ptr = env;
-	if (!find_path_var(env, vars)) //here I initialized PATH variable
-		print_error("no var path in **env\n"); //and check on absence
+	if (!find_path_var(env, vars))
+		print_error_and_free("no var path in **env\n", vars);
 	vars->cmd_number = argc - 3 - vars->here_doc_flag;
 }
 
@@ -89,9 +135,7 @@ void	cmd_parser(t_vars *vars, char *argv_str, int cmd_flag) //mb flag na commad 
 	buf_str[i] = 0;
 	if (i == 0)
 		return ;
-		vars->flag_to_cmd = ft_strdup(buf_str);
-//	printf("cmd = %s\n", vars->cmd);
-//	printf("flag_to_cmd = %s\n", vars->flag_to_cmd);
+	vars->flag_to_cmd = ft_strdup(buf_str);
 }
 
 
@@ -102,7 +146,7 @@ void	filename_parser(int argc, char **argv, t_vars *vars)
 	vars->infile = argv[1];
 	vars->outfile = argv[argc - 1];
 	if (access(vars->infile, R_OK | F_OK) == -1)
-		print_error("infile doesn't exist\n");
+		print_error_and_free("infile doesn't exist\n", vars);
 }
 
 void	heredoc_parser(int argc, char **argv, t_vars *vars)
@@ -112,18 +156,18 @@ void	heredoc_parser(int argc, char **argv, t_vars *vars)
 	char	*limiter;
 
 	vars->here_doc_flag = 1;
-	fd = open("here_doc", O_RDWR, O_CREAT, O_APPEND, 0644);
+	fd = open("here_doc", O_RDWR | O_CREAT, 0644);
 	if (fd < 0)
-		print_error("here_doc error: can't open file\n");
-	vars->infile = ft_strdup("here_doc"); //malloc and free at the end
+		print_error_and_free("here_doc error: can't open file\n", vars);
+	vars->infile = "here_doc"; //malloc and free at the end
 	if (!vars->infile) //can be deleted while norm
-		print_error("here_doc error: can't malloc\n");
+		print_error_and_free("here_doc error: can't malloc\n", vars);
 	limiter = ft_strjoin(argv[2], "\n");
 	while (1)
 	{
 		line = get_next_line(0);
 		if (!line)
-			print_error("here_doc error: gnl is null\n"); //check if nothing written
+			print_error_and_free("here_doc error: gnl is null\n", vars); //check if nothing written
 		if (ft_strcmp_ppx(line, limiter) == 1)
 		{
 			close(fd);
@@ -131,8 +175,8 @@ void	heredoc_parser(int argc, char **argv, t_vars *vars)
 			free(limiter);
 			return ;
 		}
-		if (write(fd, line, sizeof(line)) == -1)
-			print_error("here_doc error: can't write");
+		if (write(fd, line, ft_strlen(line)) == -1)
+			print_error_and_free("here_doc error: can't write", vars);
 		free(line);
 	}
 }
