@@ -4,30 +4,31 @@
 # include <stdlib.h>
 # include <unistd.h>
 # include <fcntl.h>
+# include <limits.h>
 # include "libft/libft.h"
 typedef struct s_vars
 {
-	int		pid_1;
-	char	*cmd_1;
-	char	*flag_to_cmd_1;
-	char	*path_to_cmd_1; //mb change to unnamed cmd because these commands are subsequent so one var to both commands
-	char	**cmd_argv_1;
+	int		pid;
+	char	*cmd;
+	char	*flag_to_cmd;
+	char	*path_to_cmd; //mb change to unnamed cmd because these commands are subsequent so one var to both commands
+	char	**cmd_argv;
 	
-	int		pid_2;
-	char	*cmd_2;
-	char	*flag_to_cmd_2;
-	char	*path_to_cmd_2;
-	char	**cmd_argv_2;
 	
 
 	char	**path_var;
 
 
-	int		pipe_fd[2];
+
 	char	*infile;
 	char	*outfile;
 	char	**env_ptr;
 	
+	int		here_doc_flag;
+	int		cmd_number;
+	int		cmd_counter;
+	int		pipes_fd[OPEN_MAX];
+	int		counter;
 }				t_vars;
 
 void	print_error(char *str);

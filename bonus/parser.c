@@ -20,16 +20,33 @@ int ft_strncmp_ppx(char *str_1, char *str_2, int n)
 	return (1);
 }
 
-void	env_parser(char **env, t_vars *vars) //good
+int	ft_strcmp_ppx(char *str_1, char *str_2)
+{
+	int	i;
+
+	i = 0;
+	if (ft_strlen(str_1) != ft_strlen(str_2))
+		return (-1);
+	while (str_1[i])
+	{
+		if (str_1[i] != str_2[i])
+			return (-1);
+		i++;
+	}
+	return (1);
+}
+
+void	env_argc_parser(char **env, int argc, t_vars *vars) //good
 {
 	int	i;
 
 	i = 0;
 	if (!env)
 		print_error("env is null\n");
-	vars->env_ptr = env; //malloc nado?
+	vars->env_ptr = env;
 	if (!find_path_var(env, vars)) //here I initialized PATH variable
 		print_error("no var path in **env\n"); //and check on absence
+	vars->cmd_number = argc - 2 - vars->here_doc_flag;
 }
 
 int find_path_var(char **env, t_vars *vars)
@@ -52,7 +69,7 @@ int find_path_var(char **env, t_vars *vars)
 }
 
 
-void	cmd_parser(t_vars *vars, char *argv_str, int cmd_flag) //mb flag na commad 1 and cmd 2
+void	cmd_parser(t_vars *vars, char *argv_str) //mb flag na commad 1 and cmd 2
 {
 	char	buf_str[10000]; //mb echo "100000000 symbols" so change way mb
 	int		i;
@@ -62,10 +79,7 @@ void	cmd_parser(t_vars *vars, char *argv_str, int cmd_flag) //mb flag na commad 
 	while (*argv_str != ' ' && *argv_str != '\t' && *argv_str)
 		buf_str[i++] = *argv_str++;
 	buf_str[i] = 0;
-	if (cmd_flag == 1)
-		vars->cmd_1 = ft_strdup(buf_str);
-	else
-		vars->cmd_2 = ft_strdup(buf_str);
+		vars->cmd = ft_strdup(buf_str);
 	while (*argv_str == ' ' || *argv_str == '\t')
 		argv_str++;
 	
@@ -75,10 +89,7 @@ void	cmd_parser(t_vars *vars, char *argv_str, int cmd_flag) //mb flag na commad 
 	buf_str[i] = 0;
 	if (i == 0)
 		return ;
-	if (cmd_flag == 1)
-		vars->flag_to_cmd_1 = ft_strdup(buf_str);
-	else
-		vars->flag_to_cmd_2 = ft_strdup(buf_str);
+		vars->flag_to_cmd = ft_strdup(buf_str);
 //	printf("cmd = %s\n", vars->cmd);
 //	printf("flag_to_cmd = %s\n", vars->flag_to_cmd);
 }
@@ -92,4 +103,33 @@ void	filename_parser(int argc, char **argv, t_vars *vars)
 	vars->outfile = argv[argc - 1];
 	if (access(vars->infile, R_OK | F_OK) == -1)
 		print_error("infile doesn't exist\n");
+}
+
+void	heredoc_parser(int argc, char **argv, t_vars *vars)
+{
+	char	*line;
+	int		fd;
+
+	vars->here_doc_flag = 1;
+	fd = open("here_doc", O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
+	if (fd < 0)
+		print_error("here_doc error: can't open file\n");
+	vars->infile = ft_strdup(here_doc);
+	if (!vars->infile) //can be deleted while norm
+		print_error("here_doc error: can't malloc\n");
+	while (1)
+	{
+		line = getnextline(0);
+		if (!line)
+			print_error("here_doc error: gnl is null\n"); //check if nothing written
+		if (ft_strcmp_ppx(line, argv[2]) == 1)
+		{
+			close(fd);
+			free(line);
+			return ;
+		}
+		if (write(fd, line, sizeof(line)) == -1)
+			print_error("here_doc error: can't write");
+		free(line);
+	}
 }
