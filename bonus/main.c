@@ -7,10 +7,6 @@ void init_vars(t_vars *vars)
 	vars->path_to_cmd = NULL; //mb change to unnamed cmd because these commands are subsequent so one var to both commands
 	vars->cmd_argv = NULL;
 	
-	vars->cmd_2 = NULL;
-	vars->flag_to_cmd_2 = NULL;
-	vars->path_to_cmd_2 = NULL;
-	vars->cmd_argv_2 = NULL;
 	
 
 	vars->path_var = NULL;
@@ -77,13 +73,16 @@ void pipes_creating(t_vars *vars)
 	int	pipe_fd[2];
 
 	i = 0;
-	while (i < vars->cmd_number * 2) //(cmd_number - 1) * 2
+	while (i < (vars->cmd_number - 1) * 2) //(cmd_number - 1) * 2
 	{
 		if (pipe(pipe_fd) < 0) //add_ro_array
 			print_error("pipe error\n");
 		vars->pipes_fd[i++] = pipe_fd[0];
 		vars->pipes_fd[i++] = pipe_fd[1];
 	}
+	for (int i = 0; i < (vars->cmd_number -1) * 2; i++)
+		printf("%d ", vars->pipes_fd[i]);
+	printf("\n");
 }
 
 
@@ -91,11 +90,12 @@ void first_child(t_vars *vars, char **argv)
 {
 	int	fd;
 
-	vars->cmd_counter = 2 + here_doc_flag;
+	vars->cmd_counter = 2 + vars->here_doc_flag;
 	cmd_parser(vars, argv[vars->cmd_counter++], 1);
-	vars.path_to_cmd = compose_path_and_find_cmd(&vars, vars.cmd); //mb first command
-	vars.cmd_argv = compose_argv_to_child(&vars, vars.cmd, vars.flag_to_cmd);
+	vars->path_to_cmd = compose_path_and_find_cmd(vars, vars->cmd); //mb first command
+	vars->cmd_argv = compose_argv_to_child(vars, vars->cmd, vars->flag_to_cmd);
 	vars->pid = fork();
+	printf("pid_start = %d\n", getpid());
 	if (vars->pid < 0)
 		print_error("fork error\n"); //and free all
 	if (vars->pid == 0)
@@ -106,6 +106,7 @@ void first_child(t_vars *vars, char **argv)
 			//unlink(heredoc); add to print_error
 		if (dup2(vars->pipes_fd[1], 1) < 0 || dup2(fd, 0) < 0)
 			print_error("dup2 error: child1\n");
+		printf("start: fd_0 = %d\tfd_1 = %d\n", 0, vars->pipes_fd[1]);
 		close(vars->pipes_fd[0]);
 		close(vars->pipes_fd[1]);
 		close(fd);
@@ -117,17 +118,19 @@ void first_child(t_vars *vars, char **argv)
 void middle_child(t_vars *vars, char **argv)
 {
 	cmd_parser(vars, argv[vars->cmd_counter++], 1);
-	vars.path_to_cmd = compose_path_and_find_cmd(&vars, vars.cmd);
-	vars.cmd_argv = compose_argv_to_child(&vars, vars.cmd, vars.flag_to_cmd);
+	vars->path_to_cmd = compose_path_and_find_cmd(vars, vars->cmd);
+	vars->cmd_argv = compose_argv_to_child(vars, vars->cmd, vars->flag_to_cmd);
 	vars->pid = fork();
+	printf("pid_mid = %d\n", getpid());
 	if (vars->pid < 0)
 		print_error("fork error\n"); //and free all
 	if (vars->pid == 0)
 	{
-		if (dup2(vars->pipes_fd[vars->(counter - 1) * 2], 1) < 0 \
+		if (dup2(vars->pipes_fd[(vars->counter - 1) * 2], 1) < 0 \
 			|| dup2(vars->pipes_fd[vars->counter * 2 + 1], 0) < 0)
 			print_error("dup2 error: child_mid\n");
-		close(vars->pipes_fd[vars->(counter - 1) * 2]);
+		printf("fd_0 = %d\tfd_1 = %d\n",vars->pipes_fd[(vars->counter - 1) * 2], vars->pipes_fd[vars->counter * 2 + 1]);
+		close(vars->pipes_fd[(vars->counter - 1) * 2]);
 		close(vars->pipes_fd[vars->counter * 2 + 1]);
 		if (execve(vars->path_to_cmd, vars->cmd_argv, vars->env_ptr) == -1)
 			print_error("execv error: child_mid\n"); //and free child args
@@ -140,9 +143,10 @@ void end_child(t_vars *vars, char **argv)
 	int	fd;
 
 	cmd_parser(vars, argv[vars->cmd_counter++], 1);
-	vars.path_to_cmd = compose_path_and_find_cmd(&vars, vars.cmd); //mb first command
-	vars.cmd_argv = compose_argv_to_child(&vars, vars.cmd, vars.flag_to_cmd);
+	vars->path_to_cmd = compose_path_and_find_cmd(vars, vars->cmd); //mb first command
+	vars->cmd_argv = compose_argv_to_child(vars, vars->cmd, vars->flag_to_cmd);
 	vars->pid = fork();
+	printf("pid_end = %d\n", getpid());
 	if (vars->pid < 0)
 		print_error("fork error\n"); //and free all
 	if (vars->pid == 0)
@@ -151,11 +155,15 @@ void end_child(t_vars *vars, char **argv)
 		if (fd == -1)
 			print_error("open error: end_child\n");
 			//unlink(heredoc); add to print_error
-		if (dup2(vars->fd, 1) < 0 || dup2(vars->pipes_fd[(vars->counter - 1) * 2], 0) < 0)
+		if (dup2(fd, 1) < 0 || dup2(vars->pipes_fd[(vars->counter - 1) * 2], 0) < 0)
 			print_error("dup2 error: end_child\n");
+		printf("counter = %d\n", vars->counter);
+		printf("fd  = %d\n", fd);
+		printf("end: fd_0 = %d\tfd_1 = %d\n",vars->pipes_fd[(vars->counter - 1) * 2], fd);
 		close(vars->pipes_fd[(vars->counter - 1) * 2]);
 		close(vars->pipes_fd[vars->counter * 2 + 1]);
 		close(fd);
+		sleep(1000);
 		if (execve(vars->path_to_cmd, vars->cmd_argv, vars->env_ptr) == -1)
 			print_error("execv error: end_child\n"); //and free child args
 	}
@@ -163,7 +171,7 @@ void end_child(t_vars *vars, char **argv)
 
 
 
-void	process_part(t_vars *vars, argv)
+void	process_part(t_vars *vars, char **argv)
 {
 //	vars->pipes_fd = ft_bzero(); //malloc
 	pipes_creating(vars);
@@ -188,7 +196,7 @@ void	process_part(t_vars *vars, argv)
 	}
 	
 	while (vars->cmd_counter-- >= 0) //wait for all processes
-		waitpid(-1, 0, NULL);
+		waitpid(-1, NULL, 0);
 }
 
 
@@ -203,8 +211,8 @@ int main(int argc, char **argv, char **env)
 	if (argc < 5)
 		print_error("problem with argc\n");
 	if (ft_strcmp_ppx("here_doc", argv[1]) == 1)
-		heredoc_parser(argc, argv, vars);
-	env_parser(env, &vars);
+		heredoc_parser(argc, argv, &vars);
+	env_argc_parser(env, argc, &vars);
 	filename_parser(argc, argv, &vars);
 	process_part(&vars, argv);
 

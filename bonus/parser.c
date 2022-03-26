@@ -46,7 +46,7 @@ void	env_argc_parser(char **env, int argc, t_vars *vars) //good
 	vars->env_ptr = env;
 	if (!find_path_var(env, vars)) //here I initialized PATH variable
 		print_error("no var path in **env\n"); //and check on absence
-	vars->cmd_number = argc - 2 - vars->here_doc_flag;
+	vars->cmd_number = argc - 3 - vars->here_doc_flag;
 }
 
 int find_path_var(char **env, t_vars *vars)
@@ -69,7 +69,7 @@ int find_path_var(char **env, t_vars *vars)
 }
 
 
-void	cmd_parser(t_vars *vars, char *argv_str) //mb flag na commad 1 and cmd 2
+void	cmd_parser(t_vars *vars, char *argv_str, int cmd_flag) //mb flag na commad 1 and cmd 2
 {
 	char	buf_str[10000]; //mb echo "100000000 symbols" so change way mb
 	int		i;
@@ -109,23 +109,26 @@ void	heredoc_parser(int argc, char **argv, t_vars *vars)
 {
 	char	*line;
 	int		fd;
+	char	*limiter;
 
 	vars->here_doc_flag = 1;
-	fd = open("here_doc", O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
+	fd = open("here_doc", O_RDWR, O_CREAT, O_APPEND, 0644);
 	if (fd < 0)
 		print_error("here_doc error: can't open file\n");
-	vars->infile = ft_strdup(here_doc);
+	vars->infile = ft_strdup("here_doc"); //malloc and free at the end
 	if (!vars->infile) //can be deleted while norm
 		print_error("here_doc error: can't malloc\n");
+	limiter = ft_strjoin(argv[2], "\n");
 	while (1)
 	{
-		line = getnextline(0);
+		line = get_next_line(0);
 		if (!line)
 			print_error("here_doc error: gnl is null\n"); //check if nothing written
-		if (ft_strcmp_ppx(line, argv[2]) == 1)
+		if (ft_strcmp_ppx(line, limiter) == 1)
 		{
 			close(fd);
 			free(line);
+			free(limiter);
 			return ;
 		}
 		if (write(fd, line, sizeof(line)) == -1)
