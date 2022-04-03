@@ -1,4 +1,4 @@
-#include "pipex.h"
+#include "../pipex.h"
 
 int	ft_strncmp_ppx(char *str_1, char *str_2, int n)
 {
@@ -32,9 +32,6 @@ int	ft_strcmp_ppx(char *str_1, char *str_2)
 
 void	env_argc_parser(char **env, int argc, t_vars *vars)
 {
-	int	i;
-
-	i = 0;
 	if (!env)
 		print_error("env is null\n", vars);
 	vars->env_ptr = env;

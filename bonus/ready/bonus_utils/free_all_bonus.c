@@ -1,4 +1,4 @@
-#include "pipex.h"
+#include "../pipex.h"
 
 void	free_child(t_vars *vars)
 {

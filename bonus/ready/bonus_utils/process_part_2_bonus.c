@@ -1,4 +1,4 @@
-#include "pipex.h"
+#include "../pipex.h"
 
 void	init_vars(t_vars *vars)
 {
@@ -9,6 +9,8 @@ void	init_vars(t_vars *vars)
 	vars->outfile = NULL;
 	vars->env_ptr = NULL;
 	vars->counter = 0;
+	vars->in_fd = 0;
+	vars->out_fd = 0;
 }
 
 char	*compose_path_and_find_cmd(t_vars *vars, char *cmd)
@@ -56,7 +58,7 @@ int	main(int argc, char **argv, char **env)
 	if (argc < 5)
 		print_error("problem with argc\n", &vars);
 	if (ft_strcmp_ppx("here_doc", argv[1]) == 1)
-		heredoc_parser(argc, argv, &vars);
+		heredoc_parser(argv, &vars);
 	filename_parser(argc, argv, &vars);
 	env_argc_parser(env, argc, &vars);
 	process_part(&vars, argv);
