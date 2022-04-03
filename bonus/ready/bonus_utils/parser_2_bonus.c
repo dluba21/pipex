@@ -1,4 +1,4 @@
-#include "../pipex.h"
+#include "pipex_bonus.h"
 
 int	ft_strncmp_ppx(char *str_1, char *str_2, int n)
 {

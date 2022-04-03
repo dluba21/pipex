@@ -1,8 +1,7 @@
 SRCS	= utils/free_all.c\
-		utils/parser_1.c\
-		utils/parser_2.c\
-		utils/proccess_part_1.c\
-		utils/process_part_2.c\
+		utils/parser.c\
+		utils/main.c\
+		utils/processes.c\
 		utils/ft_split_ppx.c\
 		get_next_line/get_next_line.c\
 		get_next_line/get_next_line_utils.c\
@@ -22,9 +21,11 @@ OBJS_BONUSES 	= ${SRCS_BONUS:.c=.o}
 
 NAME		= pipex
 
-HEADER		= pipex.h
+HEADER		= utils/pipex.h
 
-HEADER_2		= get_next_line/get_next_line.h
+HEADER_BONUS	= bonus_utils/pipex_bonus.h
+
+HEADER_2	= get_next_line/get_next_line.h
 
 CC		= cc
 
@@ -37,22 +38,19 @@ INCLUDES 	= libft/libft.a
 
 all: $(NAME)
 
-bonus: $(NAME)
-
 $(NAME): $(OBJS) $(HEADER) $(HEADER_2)
 	make -C libft/
 	$(CC) $(OBJS) -o $(NAME) $(FLAGS) $(INCLUDES)
 
-$(NAME): $(OBJS_BONUSES) $(HEADER) $(HEADER_2)
+bonus: $(OBJS_BONUSES) $(HEADER_BONUS) $(HEADER_2)
 	make -C libft/
 	$(CC) $(OBJS_BONUSES) -o $(NAME) $(FLAGS) $(INCLUDES)
 
 clean:
-	@rm -rf ${OBJS} $(OBJ_MAIN) ${OBJS_BONUSES}
+	@rm -rf ${OBJS} ${OBJS_BONUSES}
 	@make -C libft/ clean
 
 fclean:	clean
-	@rm -rf ${NAME}
 	@rm -rf ${NAME}
 	@make -C libft/ fclean
 

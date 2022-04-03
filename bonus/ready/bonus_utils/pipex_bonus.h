@@ -1,12 +1,11 @@
-#ifndef PIPEX_H
-# define PIPEX_H
+#ifndef PIPEX_BONUS_H
+# define PIPEX_BONUS_H
 # include <stdlib.h>
 # include <unistd.h>
 # include <fcntl.h>
 # include <limits.h>
-# include "get_next_line/get_next_line.h"
-# include "libft/libft.h"
-#include <stdio.h>
+# include "../get_next_line/get_next_line.h"
+# include "../libft/libft.h"
 
 typedef struct s_vars
 {

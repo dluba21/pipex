@@ -1,4 +1,4 @@
-#include "../pipex.h"
+#include "pipex_bonus.h"
 
 void	init_vars(t_vars *vars)
 {

@@ -1,4 +1,4 @@
-#include "../pipex.h"
+#include "pipex_bonus.h"
 
 void	first_child(t_vars *vars, char **argv)
 {
@@ -78,10 +78,7 @@ void	process_part(t_vars *vars, char **argv)
 	}
 	vars->counter = 0;
 	while (vars->counter < (vars->cmd_number - 1) * 2)
-	{
 		close(vars->pipes_fd[vars->counter++]);
-		close(vars->pipes_fd[vars->counter++]);
-	}
 	while (vars->cmd_number-- > 0)
 		waitpid(-1, NULL, 0);
 }

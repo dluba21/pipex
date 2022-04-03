@@ -1,4 +1,4 @@
-#include "../pipex.h"
+#include "pipex_bonus.h"
 
 static void	split_init(char *str, char c, t_split *s)
 {

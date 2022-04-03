@@ -1,4 +1,4 @@
-#include "../pipex.h"
+#include "pipex_bonus.h"
 
 int	find_path_var(char **env, t_vars *vars)
 {
@@ -38,6 +38,12 @@ void	filename_parser(int argc, char **argv, t_vars *vars)
 			print_error("infile doesn't exist\n", vars);
 		vars->in_fd = open(argv[1], O_RDONLY);
 	}
+	else
+	{
+		vars->in_fd = open("here_doc", O_RDWR | O_CREAT, 0644);
+		if (vars->in_fd < 0)
+			print_error("here_doc error: can't open file\n", vars);
+	}
 	if (vars->here_doc_flag == 1)
 		vars->out_fd = open(argv[argc - 1], O_RDWR | O_CREAT | O_APPEND, 0644);
 	else
@@ -60,7 +66,6 @@ int	heredoc_p2(t_vars *vars)
 void	heredoc_parser(char **argv, t_vars *vars)
 {
 	char	*line;
-	int		fd;
 	char	*limiter;
 
 	vars->in_fd = heredoc_p2(vars);
@@ -74,6 +79,7 @@ void	heredoc_parser(char **argv, t_vars *vars)
 		{
 			free(line);
 			free(limiter);
+			close(vars->in_fd);
 			return ;
 		}
 		if (write(vars->in_fd, line, ft_strlen(line)) == -1)
