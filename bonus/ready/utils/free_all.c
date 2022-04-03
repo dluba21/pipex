@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   free_all.c                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dluba <dluba@student.42.fr>                +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2022/04/03 20:38:30 by dluba             #+#    #+#             */
+/*   Updated: 2022/04/03 20:39:01 by dluba            ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "pipex.h"
 
 void	print_error(char *str)
@@ -57,4 +69,3 @@ void	print_child_error(char *str, t_vars *vars, int cmd_flag)
 		free_child(vars, 2);
 	print_error(str);
 }
-
